@@ -1,0 +1,96 @@
+here is what i found in the file : 
+
+
+
+HTTP Request Details
+
+
+
+
+
+Method: POST
+
+
+
+URL Path: /agents/{agent_id}/runs/{run_id}/continue
+
+
+
+
+
+agent_id (Path parameter, Required): The ID of your agent (e.g. postgres_agent).
+
+
+
+run_id (Path parameter, Required): The unique ID of the paused run.
+
+
+
+Content-Type: application/x-www-form-urlencoded or multipart/form-data
+
+
+
+2. Required Fields
+
+Field Name	Type	Form Location	Description
+
+session_id	str	Form Data	Required. The session ID associated with the paused run.
+
+tools	str (JSON)	Form Data	Required when resuming a run that has pending tool execution / HITL approvals.<br>Must be a JSON string encoding an array of tool execution objects
+
+
+
+Expected JSON Structure for tools:
+
+
+
+[
+
+  {
+
+    "tool_call_id": "call_xyz123",
+
+    "tool_name": "run_admin_sql",
+
+    "tool_args": { "sql": "ALTER TABLE ..." },
+
+    "content": "Action approved by human",
+
+    "confirmed": true
+
+  }
+
+]
+
+
+
+and these are just optional fields : 
+
+
+
+Field Name	Type	Default	Description
+
+input	str	None	Optional text to append to the run as a new user message.
+
+continue_from	str	"end"	Where to resume from: "end", "last_user", or a numeric message index string.
+
+stream	bool	true	Return real-time streaming response using SSE (text/event-stream). Set false for JSON response.
+
+background	bool	false	Run in background detached task (survives client disconnect, requires DB).
+
+user_id	str	None	User identifier for tracking context.
+
+fork	bool	false	Clone the run with a new run_id before resuming instead of modifying the existing run.
+
+regenerate	bool	false	Regenerate the last response (automatically sets continue_from='last_user').
+
+replace_original	bool	true	Only used with regenerate=true. Hides the original response in history.
+
+additional_instructions	str	None	Only used with regenerate=true. Appends extra prompt guidance.
+
+
+
+
+
+
+
