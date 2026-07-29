@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 from agno.db.postgres import PostgresDb
 
 from hitl import JiraHitlMiddleware, run_admin_sql, block_unapproved_ddl_hook, FIELD_SESSION_ID
+from fastapi import WebSocket, WebSocketDisconnect
+from collections import defaultdict
+import asyncio
 
 load_dotenv()
 
@@ -31,6 +34,34 @@ jira = JIRA(
     basic_auth=(os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"]),
 )
 DATABASE_URL = "postgresql://postgres:qaszdeszqa@localhost:5432/test_db"
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active: dict[str, list[WebSocket]] = defaultdict(list)
+        self.lock = asyncio.Lock()
+
+    async def connect(self, session_id: str, ws: WebSocket):
+        await ws.accept()
+        async with self.lock:
+            self.active[session_id].append(ws)
+
+    async def disconnect(self, session_id: str, ws: WebSocket):
+        async with self.lock:
+            if ws in self.active.get(session_id, []):
+                self.active[session_id].remove(ws)
+            if not self.active.get(session_id):
+                self.active.pop(session_id, None)
+
+    async def send_to_session(self, session_id: str, payload: dict):
+        for ws in list(self.active.get(session_id, [])):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                await self.disconnect(session_id, ws)
+
+manager = ConnectionManager()
+
 
 shared_model = Nvidia(id="nvidia/nemotron-3-ultra-550b-a55b")
 postgres_mcp_command = "postgres-mcp --access-mode=unrestricted"
@@ -125,6 +156,14 @@ async def _get_session_id_from_jira(issue_key: str) -> str | None:
         print(f"Error fetching session_id from Jira issue {issue_key}: {e}")
         return None
 
+@app.websocket("/ws/sessions/{session_id}")
+async def ws_session(websocket: WebSocket, session_id: str):
+    await manager.connect(session_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # just keeps the connection alive
+    except WebSocketDisconnect:
+        await manager.disconnect(session_id, websocket)
 
 @app.get("/api/approvals/{run_id}")
 def get_approval_status(run_id: str):
@@ -142,7 +181,6 @@ async def _resolve_paused_run(run_id: str, confirmed: bool, requirement_json: st
     requirement = json.loads(requirement_json)
     tool_exec = requirement.get("tool_execution") or requirement.get("toolExecution") or {}
 
-    # Extract fields from nested tool_execution into top-level keys for ToolExecution.from_dict
     tool_payload = {
         "tool_call_id": tool_exec.get("tool_call_id") or tool_exec.get("toolCallId"),
         "tool_name": tool_exec.get("tool_name") or tool_exec.get("toolName"),
@@ -155,7 +193,7 @@ async def _resolve_paused_run(run_id: str, confirmed: bool, requirement_json: st
     form_data = {"tools": json.dumps([tool_payload])}
     if session_id:
         form_data["session_id"] = session_id
-    
+
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
@@ -163,12 +201,21 @@ async def _resolve_paused_run(run_id: str, confirmed: bool, requirement_json: st
                 data=form_data,
             )
             resp.raise_for_status()
-            return _parse_sse_final_content(resp.text) if resp.content else {}
+            result = _parse_sse_final_content(resp.text) if resp.content else {}
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="The agent took too long to respond after resuming.")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
 
+    if session_id:
+        await manager.send_to_session(session_id, {
+            "type": "run_resumed",
+            "run_id": run_id,
+            "status": "completed" if confirmed else "rejected",
+            "content": result.get("content"),
+        })
+
+    return result
 @app.post("/api/approvals/{run_id}/continue")
 async def continue_paused_run(run_id: str):
     row = _get_approval_row(run_id)
@@ -191,14 +238,24 @@ async def reject_paused_run(run_id: str):
     row = _get_approval_row(run_id)
     if not row:
         raise HTTPException(status_code=404, detail="No Jira ticket found for this run")
-    issue_key, _requirement_json = row  # unused here, /cancel doesn't need it
+    issue_key, _requirement_json = row
 
     issue = jira.issue(issue_key)
     simplified = JIRA_STATUS_MAP.get(issue.fields.status.name.lower(), "pending")
     if simplified != "blocked":
         raise HTTPException(status_code=409, detail=f"Ticket is not blocked (status: {issue.fields.status.name})")
 
+    session_id = getattr(issue.fields, FIELD_SESSION_ID, None)
     await _cancel_paused_run(run_id)
+
+    if session_id:
+        await manager.send_to_session(session_id, {
+            "type": "run_resumed",
+            "run_id": run_id,
+            "status": "rejected",
+            "content": "This action was blocked and the run was stopped.",
+        })
+
     return {"status": "rejected", "content": "This action was blocked and the run was stopped."}
 
 async def _cancel_paused_run(run_id: str):
