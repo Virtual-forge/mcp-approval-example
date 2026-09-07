@@ -1,28 +1,43 @@
-// ApprovalSocketContext.jsx
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 
 const ApprovalSocketContext = createContext(null);
 
-export function ApprovalSocketProvider({ sessionId, onResolved, children }) {
+export function ApprovalSocketProvider({ sessionId, wsBaseUrl, onResolved, children }) {
   const listenersRef = useRef(new Map()); // runId -> Set<callback>
+  const onResolvedRef = useRef(onResolved);
+  useEffect(() => {
+    onResolvedRef.current = onResolved;
+  }, [onResolved]);
 
   useEffect(() => {
-    if (!sessionId) return;
-    const ws = new WebSocket(`ws://localhost:7790/ws/sessions/${sessionId}`);
+    if (!sessionId || !wsBaseUrl) return;
+    const ws = new WebSocket(`${wsBaseUrl}/ws/sessions/${sessionId}`);
+    let closedEarly = false;
+
+    ws.onopen = () => {
+      if (closedEarly) ws.close();
+    };
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.type !== 'run_resumed') return;
 
-      // Notify the chat window
-      onResolved?.(msg.content, msg.status === 'rejected');
+      onResolvedRef.current?.(msg.content, msg.status === 'rejected');
 
-      // Notify any subscribed button for that runId
-      listenersRef.current.get(msg.run_id)?.forEach((cb) => cb(msg));
+      // Agno's payload uses run_id, LangGraph's uses approval_id - accept either.
+      const id = msg.run_id || msg.approval_id;
+      listenersRef.current.get(id)?.forEach((cb) => cb(msg));
     };
 
-    return () => ws.close();
-  }, [sessionId, onResolved]);
+    return () => {
+      closedEarly = true;
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      } else {
+        ws.addEventListener('open', () => ws.close(), { once: true });
+      }
+    };
+  }, [sessionId, wsBaseUrl]);
 
   const subscribe = (runId, cb) => {
     if (!listenersRef.current.has(runId)) listenersRef.current.set(runId, new Set());
@@ -31,9 +46,7 @@ export function ApprovalSocketProvider({ sessionId, onResolved, children }) {
   };
 
   return (
-    <ApprovalSocketContext.Provider value={{ subscribe }}>
-      {children}
-    </ApprovalSocketContext.Provider>
+    <ApprovalSocketContext.Provider value={{ subscribe }}>{children}</ApprovalSocketContext.Provider>
   );
 }
 

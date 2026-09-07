@@ -72,6 +72,7 @@ postgres_mcp_tools = MCPTools(command=postgres_mcp_command, env=postgres_env_var
 postgres_agent = Agent(
     id="postgres_agent",
     name="DBA Agent",
+    store_history_messages=True,
     model=shared_model,
     tools=[postgres_mcp_tools, run_admin_sql],
     tool_hooks=[block_unapproved_ddl_hook],
@@ -167,9 +168,10 @@ async def ws_session(websocket: WebSocket, session_id: str):
 
 @app.get("/api/approvals/{run_id}")
 def get_approval_status(run_id: str):
-    issue_key = _get_approval_row(run_id)
-    if not issue_key:
+    row = _get_approval_row(run_id)          # was: issue_key = _get_approval_row(run_id)
+    if not row:
         raise HTTPException(status_code=404, detail="No Jira ticket found for this run")
+    issue_key, _requirement_json = row
     issue = jira.issue(issue_key)
     simplified = JIRA_STATUS_MAP.get(issue.fields.status.name.lower(), "pending")
     return {"run_id": run_id, "jira_status": issue.fields.status.name, "status": simplified}
@@ -246,17 +248,27 @@ async def reject_paused_run(run_id: str):
         raise HTTPException(status_code=409, detail=f"Ticket is not blocked (status: {issue.fields.status.name})")
 
     session_id = getattr(issue.fields, FIELD_SESSION_ID, None)
-    await _cancel_paused_run(run_id)
+    
+    # 1. Best-effort cancel of the active run
+    try:
+        await _cancel_paused_run(run_id)
+    except Exception as e:
+        print(f"Notice: Run cancel returned non-200 (run may already be stopped): {e}")
 
+    # 2. Force close/notify front-end via WebSocket
     if session_id:
         await manager.send_to_session(session_id, {
-            "type": "run_resumed",
+            "type": "session_invalidated",
+            "reason": "action_rejected",
             "run_id": run_id,
-            "status": "rejected",
-            "content": "This action was blocked and the run was stopped.",
+            "content": "Cette session a été fermée suite au rejet de l'action dans Jira. Une nouvelle session a été démarrée.",
         })
 
-    return {"status": "rejected", "content": "This action was blocked and the run was stopped."}
+    return {
+        "status": "rejected",
+        "session_closed": True,
+        "content": "Action bloquée. La session a été terminée."
+    }
 
 async def _cancel_paused_run(run_id: str):
     try:

@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 560" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .box { fill: #161b22; stroke: #30363d; stroke-width: 1.5; rx: 6px; }
+      .box-accent { fill: #1c2128; stroke: #58a6ff; stroke-width: 2; rx: 6px; }
+      .box-highlight { fill: #21262d; stroke: #d29922; stroke-width: 2; rx: 6px; }
+      .box-success { fill: #1c2128; stroke: #3fb950; stroke-width: 2; rx: 6px; }
+      .text-main { fill: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; }
+      .text-bold { font-weight: 600; }
+      .text-title { fill: #58a6ff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; }
+      .text-sub { fill: #8b949e; font-size: 11px; }
+      .text-muted { fill: #6e7681; font-size: 10px; }
+      .arrow { stroke: #8b949e; stroke-width: 1.5; fill: none; stroke-dasharray: none; }
+      .arrow-blue { stroke: #58a6ff; stroke-width: 2; fill: none; }
+      .arrow-amber { stroke: #d29922; stroke-width: 2; fill: none; stroke-dasharray: 4,4; }
+      .arrow-green { stroke: #3fb950; stroke-width: 2; fill: none; }
+      .marker { fill: #8b949e; }
+      .marker-blue { fill: #58a6ff; }
+      .marker-amber { fill: #d29922; }
+      .marker-green { fill: #3fb950; }
+    </style>
+    <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="marker" />
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="marker-blue" />
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="marker-amber" />
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="marker-green" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Title -->
+  <text x="25" y="35" class="text-title" font-size="17">Enterprise Governance Middleware for VS Code Copilot</text>
+  <text x="25" y="53" class="text-sub">Remote Database Interception &amp; Lifecycle Hook Execution Architecture</text>
+
+  <!-- Container: VS Code Client Boundary -->
+  <rect x="20" y="75" width="530" height="460" fill="none" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,5" rx="8" />
+  <text x="35" y="95" class="text-muted" font-weight="600">VS CODE CLIENT ENVIRONMENT</text>
+
+  <!-- Node 1: Chat UI -->
+  <rect x="40" y="115" width="210" height="70" class="box" />
+  <text x="55" y="140" class="text-main text-bold">1. VS Code Copilot Chat UI</text>
+  <text x="55" y="158" class="text-sub">Developer submits request</text>
+  <text x="55" y="172" class="text-muted">e.g., "@enterpriseAgent update DB"</text>
+
+  <!-- Node 2: Copilot LLM -->
+  <rect x="310" y="115" width="220" height="70" class="box" />
+  <text x="325" y="140" class="text-main text-bold">2. Copilot Model (vscode.lm)</text>
+  <text x="325" y="158" class="text-sub">Generates execution plan</text>
+  <text x="325" y="172" class="text-muted">Emits: LanguageModelToolCallPart</text>
+
+  <!-- Node 3: Enterprise Extension Middleware -->
+  <rect x="40" y="240" width="490" height="110" class="box-accent" />
+  <text x="55" y="265" class="text-title">3. Enterprise Extension Middleware (Hook Engine)</text>
+  <text x="55" y="285" class="text-main">Intercepts tool call intent before tool execution</text>
+  <text x="55" y="305" class="text-sub">• Reads tool name &amp; parameters</text>
+  <text x="55" y="322" class="text-sub">• Queries Remote Control Plane DB for permission status</text>
+
+  <!-- Node 4: Built-in VS Code Tools -->
+  <rect x="40" y="435" width="220" height="75" class="box-success" />
+  <text x="55" y="460" class="text-main text-bold">5a. Built-in VS Code Tools</text>
+  <text x="55" y="478" class="text-sub">`vscode.lm.invokeTool()`</text>
+  <text x="55" y="493" class="text-muted">Executes file edit, terminal run, etc.</text>
+
+  <!-- Node 5: UI Pause State -->
+  <rect x="310" y="435" width="220" height="75" class="box-highlight" />
+  <text x="325" y="460" class="text-main text-bold">5b. Paused UI Stream State</text>
+  <text x="325" y="478" class="text-sub">Renders ⏸️ status in chat</text>
+  <text x="325" y="493" class="text-muted">Awaits DB state update to APPROVED</text>
+
+  <!-- Container: Remote Control Plane -->
+  <rect x="580" y="75" width="245" height="460" fill="none" stroke="#30363d" stroke-width="1.5" rx="8" />
+  <text x="595" y="95" class="text-muted" font-weight="600">REMOTE CONTROL PLANE</text>
+
+  <!-- Node 6: External Database -->
+  <rect x="595" y="240" width="215" height="110" class="box-highlight" />
+  <text x="610" y="265" class="text-main text-bold">4. Policy Database</text>
+  <text x="610" y="285" class="text-sub">Stores Tool Permission Records</text>
+  <text x="610" y="308" class="text-muted">`status: PENDING | APPROVED`</text>
+  <text x="610" y="325" class="text-muted">`tool: terminal_execute`</text>
+
+  <!-- Node 7: Admin Console -->
+  <rect x="595" y="390" width="215" height="70" class="box" />
+  <text x="610" y="415" class="text-main text-bold">Enterprise Admin Console</text>
+  <text x="610" y="433" class="text-sub">Security Team approves / rejects</text>
+
+  <!-- ARROWS & FLOWS -->
+  <!-- 1 -> 2 -->
+  <path d="M 250 150 L 310 150" class="arrow-blue" marker-end="url(#arr-blue)" />
+  
+  <!-- 2 -> 3 -->
+  <path d="M 420 185 L 420 240" class="arrow" marker-end="url(#arr)" />
+
+  <!-- 3 -> 4 (Check DB) -->
+  <path d="M 530 275 L 595 275" class="arrow-amber" marker-end="url(#arr-amber)" />
+  <text x="538" y="268" class="text-muted">Check Policy</text>
+
+  <!-- 4 -> 3 (Return Status) -->
+  <path d="M 595 315 L 530 315" class="arrow-amber" marker-end="url(#arr-amber)" />
+  <text x="538" y="330" class="text-muted">Return Status</text>
+
+  <!-- 3 -> 5a (If Approved) -->
+  <path d="M 150 350 L 150 435" class="arrow-green" marker-end="url(#arr-green)" />
+  <text x="80" y="395" class="text-sub" fill="#3fb950">If APPROVED</text>
+
+  <!-- 3 -> 5b (If Pending) -->
+  <path d="M 420 350 L 420 435" class="arrow-amber" marker-end="url(#arr-amber)" />
+  <text x="428" y="395" class="text-sub" fill="#d29922">If PENDING</text>
+
+  <!-- Admin -> DB -->
+  <path d="M 702 390 L 702 350" class="arrow" marker-end="url(#arr)" />
+  <text x="708" y="375" class="text-muted">Set Status</text>
+
+</svg>

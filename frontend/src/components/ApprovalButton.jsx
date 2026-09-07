@@ -1,37 +1,41 @@
-import React, { useState } from 'react';
-import { api } from '../api.js';
+import React, { useEffect, useState } from 'react';
+import { useApprovalSocket } from './ApprovalSocketContext.jsx';
 
-export default function ApprovalButton({ runId, onResolved }) {
-  // 1. Read stored status from localStorage on initial render
-  const storageKey = `approval_status_${runId}`;
-  const [status, setStatus] = useState(() => {
-    return localStorage.getItem(storageKey) || 'unchecked';
-  });
+export default function ApprovalButton({ runId, adapter, onResolved }) {
+  const storageKey = `approval_status_${adapter.id}_${runId}`;
+  const [status, setStatus] = useState(() => localStorage.getItem(storageKey) || 'unchecked');
   const [busy, setBusy] = useState(false);
+  const socket = useApprovalSocket();
 
-  // Helper to update state AND localStorage simultaneously
   const updateStatus = (newStatus) => {
     setStatus(newStatus);
     localStorage.setItem(storageKey, newStatus);
   };
 
+  // Sync the button's state if the run resolves via Jira Automation instead
+  // of a click here (see ApprovalSocketContext).
+  useEffect(() => {
+    if (!socket) return;
+    return socket.subscribe(runId, (msg) => {
+      updateStatus(msg.status === 'rejected' ? 'blocked' : 'completed');
+    });
+  }, [socket, runId]);
+
   async function handleClick() {
     setBusy(true);
     try {
       if (status !== 'approved') {
-        // First click (or re-check while pending): refresh status
-        const res = await api.getApprovalStatus(runId);
+        const res = await adapter.getApprovalStatus(runId);
         updateStatus(res.status);
 
         if (res.status === 'blocked') {
-          const rejectRes = await api.rejectRun(runId);
+          const rejectRes = await adapter.rejectRun(runId);
           onResolved?.(rejectRes.content || 'Action rejetée - la demande a été bloquée dans Jira.', true);
         }
         return;
       }
-      // Confirmed approved on previous click - execute continue
-      const res = await api.continueRun(runId);
-      updateStatus('completed'); // Mark as completed
+      const res = await adapter.continueRun(runId);
+      updateStatus('completed');
       onResolved?.(res.content, false);
     } catch (err) {
       onResolved?.(`Erreur : ${err.message}`, true);

@@ -3,7 +3,7 @@ import ProductList from './components/ProductList.jsx';
 import ProductDetail from './components/ProductDetail.jsx';
 import ChatWidget from './components/ChatWidget.jsx';
 import { api } from './api.js';
-import { ApprovalSocketProvider } from './components/ApprovalSocketContext.jsx';
+
 export default function App() {
   const [products, setProducts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -60,9 +60,7 @@ export default function App() {
         error={listError}
       />
       <ProductDetail product={selectedProduct} loading={detailLoading} error={detailError} />
-      <ApprovalSocketProvider sessionId={sessionId} onResolved={handleAgentMessage}>
-       <ChatWindow />
-      </ApprovalSocketProvider>
+      <ChatWidget onDataChanged={refreshAll} />
     </div>
   );
 }
