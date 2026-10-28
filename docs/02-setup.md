@@ -64,7 +64,7 @@ httpx`) or the service will fail on import.
 Create `agent-service/.env` from the example. All of these values are required:
 
 | Var | Notes |
-|---|---|---|
+|---|---|
 | `DATABASE_URL` | Postgres connection string used by both the agent and approval workflow |
 | `NVIDIA_API_KEY` | API key for the Nvidia model provider |
 | `JIRA_BASE_URL` | Base URL of your Jira instance |
