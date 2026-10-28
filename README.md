@@ -1,10 +1,7 @@
 # Inventory Console — Documentation Wiki
 
 This wiki documents the **actual** behavior of the codebase in this repo, verified
-line-by-line against `agent-service/`, `backend/`, `frontend/`, and `db/`. Where the
-top-level `README.md` describes something the code doesn't actually do, it's called
-out explicitly in [08-known-gaps.md](./08-known-gaps.md) rather than silently repeated.
-
+line-by-line against `agent-service/`, `backend/`, `frontend/`, and `db/`. 
 ## Pages
 
 1. [Architecture](./01-architecture.md) — the three services, how they talk to each other, and why there are two write paths into the same table
