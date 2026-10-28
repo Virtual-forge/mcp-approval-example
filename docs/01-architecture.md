@@ -50,16 +50,9 @@ MCP, even though the two paths never talk to each other directly.
    `@tool(requires_confirmation=True)`, which *does* support Agno's pause/resume
    mechanism — so calling it pauses the run until a human approves it via Jira.
 
-## Database URL is hardcoded, twice
+## Database configuration
 
-Both `agent-service/agent.py` and `agent-service/hitl.py` independently define:
-
-```python
-DATABASE_URL = "postgresql://postgres:qaszdeszqa@localhost:5432/test_db"
-```
-
-This is not read from `.env` or any environment variable in either file — despite the
-top-level README instructing you to set `DATABASE_URL` in `backend/.env`. That value only
-configures the Node backend's connection; the Python agent service's database
-connection is separate and must be edited directly in both `agent.py` and `hitl.py` if
-you point it at a different database.
+The backend and the agent service each read `DATABASE_URL` from their own environment.
+For the agent, set it in `agent-service/.env`; both `agent.py` and `hitl.py` use that
+same value for their Postgres connections. The backend reads its separate
+`DATABASE_URL` from `backend/.env`.

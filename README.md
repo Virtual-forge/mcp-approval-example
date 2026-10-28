@@ -1,26 +1,33 @@
-# Inventory Console — Documentation Wiki
+# Inventory Console
 
-This wiki documents the **actual** behavior of the codebase in this repo, verified
-line-by-line against `agent-service/`, `backend/`, `frontend/`, and `db/`. 
-## Pages
+Inventory Console is a demo application for browsing a seeded product catalog and
+interacting with a PostgreSQL-backed DBA agent. It consists of a React/Vite frontend, a
+Node/Express API, and a Python/Agno AgentOS service. The agent can query and update the
+catalog through PostgreSQL MCP; `DROP TABLE` and `ALTER TABLE` requests go through a
+Jira-backed human approval flow.
 
-1. [Architecture](./01-architecture.md) — the three services, how they talk to each other, and why there are two write paths into the same table
-2. [Setup & Running Locally](./02-setup.md) — step-by-step, with the actual env vars each service reads
-3. [Data Model](./03-data-model.md) — `products` and `run_approvals` tables
-4. [Backend API (Node/Express)](./04-backend-api.md) — REST endpoints on port 4000
-5. [Agent Service (Agno AgentOS)](./05-agent-service.md) — the agent, its tools, and its endpoints on port 7790
-6. [HITL Approval Workflow](./06-hitl-approval-workflow.md) — how a DROP/ALTER TABLE request turns into a Jira ticket and back
-7. [Frontend](./07-frontend.md) — component tree and what each one actually calls
-8. [Known Gaps & Inconsistencies](./08-known-gaps.md) — things the code doesn't do that the old README implied, and things that would break a fresh clone
+## Documentation
 
-## One-paragraph summary
+The detailed project documentation lives in [`docs/`](./docs/):
 
-Three services share one Postgres database. The **frontend** (React/Vite, `:5173`) is a
-read-only product catalog UI plus a chat widget. The **backend** (Node/Express, `:4000`)
-exposes a full CRUD REST API over the `products` table, but — as of this codebase — the
-frontend only ever calls the `GET` endpoints; nothing in the UI calls `POST`/`PUT`/`DELETE`.
-The **agent service** (Python/Agno AgentOS, `:7790`) runs an LLM agent with direct MCP
-access to the same Postgres database, so the chat widget can genuinely read and write
-rows. Ordinary SQL (SELECT/INSERT/UPDATE/DELETE) runs immediately; `DROP TABLE` /
-`ALTER TABLE` is intercepted and routed through a Jira-backed human-approval flow before
-it's allowed to execute.
+1. [Architecture](./docs/01-architecture.md) — services, data flow, and database setup
+2. [Setup & running locally](./docs/02-setup.md) — prerequisites, environment variables,
+   and how to start each service
+3. [Data model](./docs/03-data-model.md) — product and approval tables
+4. [Backend API](./docs/04-backend-api.md) — REST routes and behavior
+5. [Agent service](./docs/05-agent-service.md) — Agno agent, tools, and endpoints
+6. [HITL approval workflow](./docs/06-hitl-approval-workflow.md) — Jira approval flow
+7. [Frontend](./docs/07-frontend.md) — UI structure and API usage
+8. [Known gaps](./docs/08-known-gaps.md) — current limitations and setup caveats
+
+## Quick start
+
+See [Setup & running locally](./docs/02-setup.md) for the complete instructions. The
+agent requires an `agent-service/.env` file; start with
+[`agent-service/.env.example`](./agent-service/.env.example). You will need a reachable
+PostgreSQL database, an Nvidia API key, and a Jira instance configured with the required
+project, issue type, and custom fields.
+
+Initialize the demo product catalog with `db/init.sql`. Note that this SQL file does
+not create the `run_approvals` table required by the Jira approval workflow; the setup
+guide and [data model documentation](./docs/03-data-model.md) describe this limitation.

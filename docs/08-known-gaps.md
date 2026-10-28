@@ -12,10 +12,9 @@ Useful as a punch-list if you pick this repo back up.
   attempt on a fresh DB will throw `relation "run_approvals" does not exist`. See
   [03-data-model.md](./03-data-model.md#run_approvals-not-in-initsql) for a DDL you can
   add.
-- **No `.env.example` files anywhere** (backend, agent-service, or frontend), though
-  the top-level README's setup steps say `cp .env.example .env` twice. You have to
-  construct these `.env` files from the variable names referenced in the code (listed
-  in [02-setup.md](./02-setup.md)).
+- **No `.env.example` files for the backend or frontend.** The agent-service example is
+  at [agent-service/.env.example](../agent-service/.env.example); backend and frontend
+  environment variables are listed in [02-setup.md](./02-setup.md).
 - **`agent-service/requirements.txt` is incomplete.** It lists `agno`, `fastapi`,
   `uvicorn`, `python-dotenv`, `openai`, `anthropic`, `mcp` — but `agent.py`/`hitl.py`
   import `jira`, `psycopg2`, `certifi`, `truststore`, and `httpx`, none of which are
@@ -23,11 +22,10 @@ Useful as a punch-list if you pick this repo back up.
   `python agent.py`.
 
 
-## Hardcoded values worth knowing about
+## Configuration and fallback values
 
-- `DATABASE_URL` is a literal string duplicated in both `agent.py` and `hitl.py`
-  (`postgresql://postgres:qaszdeszqa@localhost:5432/test_db`), independent of the
-  Node backend's `DATABASE_URL` env var — changing one does not change the other.
+- The backend and agent service use separate `DATABASE_URL` environment settings; set
+  each service's value in its own `.env` file.
 - `create_jira_issue_for_run` falls back to a hardcoded email address for
   `requested_by` when the run payload has no `user_id` — worth replacing with something
   environment-driven before this goes anywhere beyond a local demo.

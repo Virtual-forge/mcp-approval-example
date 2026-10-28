@@ -23,24 +23,24 @@ JIRA_BASE_URL = os.environ["JIRA_BASE_URL"].rstrip("/")
 JIRA_EMAIL = os.environ["JIRA_EMAIL"]
 JIRA_API_TOKEN = os.environ["JIRA_API_TOKEN"]
 JIRA_PROJECT_KEY = os.environ["JIRA_PROJECT_KEY"]
-JIRA_ISSUE_TYPE = os.environ.get("JIRA_ISSUE_TYPE", "Task")
+JIRA_ISSUE_TYPE = os.environ["JIRA_ISSUE_TYPE"]
 
 jira = JIRA(
     server=os.environ["JIRA_BASE_URL"],
     basic_auth=(os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"]),
 )
 
-FIELD_APPROVAL_ID = os.environ.get("JIRA_FIELD_APPROVAL_ID", "customfield_10044")
-FIELD_TOOL_NAME = os.environ.get("JIRA_FIELD_TOOL_NAME", "customfield_10046")
-FIELD_AGENT_ID = os.environ.get("JIRA_FIELD_AGENT_ID", "customfield_10045")
-FIELD_APPROVAL_TYPE = os.environ.get("JIRA_FIELD_APPROVAL_TYPE", "customfield_10112")
-FIELD_TOOL_CALL_ID = os.environ.get("JIRA_FIELD_TOOL_CALL_ID", "customfield_10146")
-FIELD_TOOL_ARGS = os.environ.get("JIRA_FIELD_TOOL_ARGS", "customfield_10148")
-FIELD_SESSION_ID = os.environ.get("JIRA_FIELD_SESSION_ID", "customfield_10145")
-FIELD_RUN_ID = os.environ.get("JIRA_FIELD_RUN_ID", "customfield_10147")
-FIELD_REQUESTED_BY = os.environ.get("JIRA_FIELD_REQUESTED_BY", "customfield_10181")
+FIELD_APPROVAL_ID = os.environ["JIRA_FIELD_APPROVAL_ID"]
+FIELD_TOOL_NAME = os.environ["JIRA_FIELD_TOOL_NAME"]
+FIELD_AGENT_ID = os.environ["JIRA_FIELD_AGENT_ID"]
+FIELD_APPROVAL_TYPE = os.environ["JIRA_FIELD_APPROVAL_TYPE"]
+FIELD_TOOL_CALL_ID = os.environ["JIRA_FIELD_TOOL_CALL_ID"]
+FIELD_TOOL_ARGS = os.environ["JIRA_FIELD_TOOL_ARGS"]
+FIELD_SESSION_ID = os.environ["JIRA_FIELD_SESSION_ID"]
+FIELD_RUN_ID = os.environ["JIRA_FIELD_RUN_ID"]
+FIELD_REQUESTED_BY = os.environ["JIRA_FIELD_REQUESTED_BY"]
 
-DATABASE_URL = "postgresql://postgres:qaszdeszqa@localhost:5432/test_db"
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 
@@ -148,8 +148,8 @@ def create_jira_issue_for_run(data: dict):
         description = "\n".join(description_parts)
 
         fields = {
-            "project": {"key": "SCRUM"},
-            "issuetype": {"name": "Task"},
+            "project": {"key": JIRA_PROJECT_KEY},
+            "issuetype": {"name": JIRA_ISSUE_TYPE},
             "summary": f"Approval: {tool_name}",
             "description": description,
             "labels": [f"run_id:{run_id}"] + ([f"session_id:{session_id}"] if session_id else []),
@@ -219,5 +219,4 @@ def run_admin_sql(sql: str, run_context: RunContext) -> str:
             cur.execute(sql)
         conn.commit()
     return f"Executed: {sql}"
-
 

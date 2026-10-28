@@ -27,13 +27,13 @@ JIRA_BASE_URL = os.environ["JIRA_BASE_URL"].rstrip("/")
 JIRA_EMAIL = os.environ["JIRA_EMAIL"]
 JIRA_API_TOKEN = os.environ["JIRA_API_TOKEN"]
 JIRA_PROJECT_KEY = os.environ["JIRA_PROJECT_KEY"]
-JIRA_ISSUE_TYPE = os.environ.get("JIRA_ISSUE_TYPE", "Task")
+JIRA_ISSUE_TYPE = os.environ["JIRA_ISSUE_TYPE"]
 
 jira = JIRA(
     server=os.environ["JIRA_BASE_URL"],
     basic_auth=(os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"]),
 )
-DATABASE_URL = "postgresql://postgres:qaszdeszqa@localhost:5432/test_db"
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 class ConnectionManager:
@@ -286,4 +286,3 @@ async def _cancel_paused_run(run_id: str):
 if __name__ == "__main__":
 
     agent_os.serve(app="agent:app", reload=False, port=7790)
-

@@ -48,11 +48,11 @@ describing the pending tool call — `tool_call_id`, `tool_name`, `tool_args`, e
 `create_jira_issue_for_run`:
 - Pulls `run_id`, `session_id` (tries several possible key shapes/nesting for
   resilience against AgentOS payload variations), `agent_id`, and `requested_by`
-  (falls back to a hardcoded email if `user_id` is absent in the payload).
+  (falls back to a demo email if `user_id` is absent in the payload).
 - Reads `requirements`/`active_requirements`, and for each entry whose
   `tool_execution.requires_confirmation` is true, builds a Jira issue:
-  - `project`: **hardcoded to `{"key": "SCRUM"}`** — not read from `JIRA_PROJECT_KEY`
-  - `issuetype`: **hardcoded to `{"name": "Task"}`** — not read from `JIRA_ISSUE_TYPE`
+  - `project`: uses the required `JIRA_PROJECT_KEY` value from `agent-service/.env`
+  - `issuetype`: uses the required `JIRA_ISSUE_TYPE` value from `agent-service/.env`
   - `summary`: `"Approval: {tool_name}"`
   - `description`: a JSON dump of the full `requirement` object under a `Requirements:`
     heading

@@ -27,7 +27,10 @@ postgres_agent = Agent(
 ```
 
 - **Model**: Nvidia Nemotron 3 Ultra, via Agno's `agno.models.nvidia.Nvidia` provider —
-  not OpenAI or Anthropic, despite both SDKs being in `requirements.txt`.
+  not OpenAI or Anthropic, despite both SDKs being in `requirements.txt`. Configure the
+  required `NVIDIA_API_KEY` in `agent-service/.env`.
+- **Configuration**: `DATABASE_URL` and Jira settings are also loaded from
+  `agent-service/.env`; see [02-setup.md](./02-setup.md) for the required values.
 - **Tools**: the full `postgres-mcp` toolset (whatever `execute_sql` and friends the MCP
   server exposes) plus one custom tool, `run_admin_sql`.
 - **Tool hook**: `block_unapproved_ddl_hook` runs before *every* tool call the agent

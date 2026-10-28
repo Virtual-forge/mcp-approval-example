@@ -1,8 +1,7 @@
 # Setup & Running Locally
 
-This walks through what's actually required to get all three services running, based on
-the code — not just the top-level README's claims (see
-[08-known-gaps.md](./08-known-gaps.md) for where the two diverge).
+This walks through what's actually required to get the frontend, backend, and agent
+service running.
 
 ## 0. Prerequisites
 
@@ -16,9 +15,10 @@ the code — not just the top-level README's claims (see
 - A Jira Cloud instance + API token, with 9 custom fields already created (see
   [06-hitl-approval-workflow.md](./06-hitl-approval-workflow.md))
 
-There is no `.env.example` file anywhere in this repo (backend, agent-service, or
-frontend), despite instructions elsewhere referencing one — you'll need to create these
-`.env` files from scratch using the variable names below.
+An [agent-service `.env.example`](../agent-service/.env.example) is provided. Copy it
+to `agent-service/.env` and fill in every value, including the blank Jira field-ID
+entries, with values for your environment. The backend and frontend `.env` files are
+created separately as described below.
 
 ## 1. Database
 
@@ -56,36 +56,36 @@ pip install -r requirements.txt
 python agent.py        # http://localhost:7790
 ```
 
-`requirements.txt` lists `agno`, `fastapi`, `uvicorn`, `python-dotenv`, `openai`,
-`anthropic`, `mcp` — but `agent.py`/`hitl.py` also import `jira`, `psycopg2`, `certifi`,
-`truststore`, and `httpx`, none of which are in `requirements.txt`. Install them
-manually (`pip install jira psycopg2-binary certifi truststore httpx`) or the service
-will fail on import.
+`requirements.txt` does not currently list every package imported by the service.
+`agent.py`/`hitl.py` also import `jira`, `psycopg2`, `certifi`, `truststore`, and
+`httpx`. Install them manually (`pip install jira psycopg2-binary certifi truststore
+httpx`) or the service will fail on import.
 
-Create `agent-service/.env` (all read via `os.environ[...]`, so these are **required**,
-not optional, except where noted):
+Create `agent-service/.env` from the example. All of these values are required:
 
-| Var | Required | Notes |
+| Var | Notes |
 |---|---|---|
-| `JIRA_BASE_URL` | yes | |
-| `JIRA_EMAIL` | yes | |
-| `JIRA_API_TOKEN` | yes | |
-| `JIRA_PROJECT_KEY` | read but effectively unused | see gap notes — issue creation hardcodes `"SCRUM"` |
-| `JIRA_ISSUE_TYPE` | no, default `"Task"` | also hardcoded to `"Task"` at issue-creation time regardless of this var — see gap notes |
-| `JIRA_FIELD_APPROVAL_ID` | no, default `customfield_10044` | |
-| `JIRA_FIELD_TOOL_NAME` | no, default `customfield_10046` | |
-| `JIRA_FIELD_AGENT_ID` | no, default `customfield_10045` | |
-| `JIRA_FIELD_APPROVAL_TYPE` | no, default `customfield_10112` | |
-| `JIRA_FIELD_TOOL_CALL_ID` | no, default `customfield_10146` | |
-| `JIRA_FIELD_TOOL_ARGS` | no, default `customfield_10148` | |
-| `JIRA_FIELD_SESSION_ID` | no, default `customfield_10145` | |
-| `JIRA_FIELD_RUN_ID` | no, default `customfield_10147` | |
-| `JIRA_FIELD_REQUESTED_BY` | no, default `customfield_10181` | |
+| `DATABASE_URL` | Postgres connection string used by both the agent and approval workflow |
+| `NVIDIA_API_KEY` | API key for the Nvidia model provider |
+| `JIRA_BASE_URL` | Base URL of your Jira instance |
+| `JIRA_EMAIL` | Jira account email |
+| `JIRA_API_TOKEN` | Jira API token |
+| `JIRA_PROJECT_KEY` | Project key from your Jira instance; approval issues are created in this project |
+| `JIRA_ISSUE_TYPE` | Issue type available in the selected Jira project |
+| `JIRA_FIELD_APPROVAL_ID` | Custom-field ID for the approval requirement ID |
+| `JIRA_FIELD_TOOL_NAME` | Custom-field ID for the tool name |
+| `JIRA_FIELD_AGENT_ID` | Custom-field ID for the agent ID |
+| `JIRA_FIELD_APPROVAL_TYPE` | Custom-field ID for the approval type |
+| `JIRA_FIELD_TOOL_CALL_ID` | Custom-field ID for the tool call ID |
+| `JIRA_FIELD_TOOL_ARGS` | Custom-field ID for the tool arguments |
+| `JIRA_FIELD_SESSION_ID` | Custom-field ID for the session ID |
+| `JIRA_FIELD_RUN_ID` | Custom-field ID for the run ID |
+| `JIRA_FIELD_REQUESTED_BY` | Custom-field ID for the requester |
 
-You must also either:
-- create a Postgres database matching the hardcoded `DATABASE_URL`
-  (`postgres:qaszdeszqa@localhost:5432/test_db`), or
-- edit the `DATABASE_URL` literal in **both** `agent.py` and `hitl.py`.
+Every Jira setting above is required for the approval workflow. The app does not supply
+defaults for the project key, issue type, or custom-field IDs. Select the project key,
+issue type, and field IDs that exist in your Jira instance; the nine `JIRA_FIELD_*`
+values must be the IDs of the corresponding custom fields in that instance.
 
 ## 4. Frontend (`frontend/`)
 

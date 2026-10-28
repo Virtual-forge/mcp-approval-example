@@ -71,9 +71,9 @@ verified against a real deployment.)
 
 - The Node backend reads/writes `products` through parameterized queries in
   `backend/src/routes/products.js` (standard `pg` pool).
-- The agent reads/writes the same table through the `postgres-mcp` MCP server, which
-  gets its own connection string via the `DATABASE_URI` env var passed into
-  `MCPTools(command=..., env={"DATABASE_URI": DATABASE_URL})` — configured with
-  `--access-mode=unrestricted`, i.e. no query restrictions are applied at the MCP layer
-  itself (all gating happens in application code — see
+- The agent reads/writes the same table through the `postgres-mcp` MCP server. It reads
+  `DATABASE_URL` from `agent-service/.env` and passes it to the MCP process as
+  `DATABASE_URI` via `MCPTools(command=..., env={"DATABASE_URI": DATABASE_URL})`.
+  The MCP server runs with `--access-mode=unrestricted`, so no query restrictions are
+  applied at the MCP layer itself (all gating happens in application code — see
   [06-hitl-approval-workflow.md](./06-hitl-approval-workflow.md)).
